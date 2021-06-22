@@ -21,29 +21,37 @@ func (v *ValidError) AddErrorMessage(msg string) {
 	v.errorMessage = append(v.errorMessage, msg)
 }
 
-type Validator struct {
-	ValidError
-}
-
-type Holder struct {
-	ValidError
-}
-
-func (h *Holder) Check() error {
-	if len(h.errorMessage) == 0 {
-		return nil
-	}
-	return &h.ValidError
-}
-
 type ValueHolder struct {
-	Holder
+	ValidError
 	value interface{}
 }
 
 type StringHolder struct {
-	Holder
+	ValueHolder
 	value string
+}
+
+func (vh *ValueHolder) Check() error {
+	if len(vh.errorMessage) == 0 {
+		return nil
+	}
+	return &vh.ValidError
+}
+
+func (vh *ValueHolder) Then(value interface{}) error {
+	return &ValueHolder{
+		ValidError: vh.ValidError,
+		value:      value,
+	}
+}
+
+func (vh *ValueHolder) ThenString(value string) *StringHolder {
+	return &StringHolder{
+		ValueHolder: ValueHolder{
+			ValidError: vh.ValidError,
+		},
+		value:      value,
+	}
 }
 
 func StringOf(value string) *StringHolder {
